@@ -1,0 +1,15 @@
+{
+  "apps": [
+    {
+      "name": "frontend-temporary",
+      "script": "node_modules/next/dist/bin/next",
+      "args": "start -p 9000",
+      "cwd": "./",
+      "instances": "4",
+      "exec_mode": "cluster",
+      "env": {
+        "BUILD_DIR": "temp"
+      }
+    }
+  ]
+}
