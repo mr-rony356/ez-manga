@@ -1,6 +1,15 @@
 "use client";
-import { Chapter, Season } from "@/types";
-import { useState, useEffect, createRef, useMemo } from "react";
+import { formatNumber, get_time_diff } from "@/components/Series/helpers";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Pagination,
   PaginationContent,
@@ -10,38 +19,24 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import useAuthentication from "@/hooks/useAuth";
+import { clear_cache } from "@/lib/actions";
 import { buy_chapter, fetcher } from "@/services";
-import {
-  faLock,
-  faEye,
-  faCoins,
-  faLockOpen,
-} from "@fortawesome/free-solid-svg-icons";
+import { Chapter, Season } from "@/types";
+import { faCoins, faEye, faLockOpen } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { get_file_url } from "@functions";
-import Link from "next/link";
-import { get_time_diff, formatNumber } from "@/components/Series/helpers";
-import { ArrowDownIcon, ArrowUpIcon, SpeakerLoudIcon } from "@radix-ui/react-icons";
-import useSWR from "swr";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowDownIcon, ArrowUpIcon } from "@radix-ui/react-icons";
+import { Search } from "lucide-react";
 import Image from "next/image";
-import useAuthentication from "@/hooks/useAuth";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { clear_cache } from "@/lib/actions";
-import { toast } from "sonner";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
+import { createRef, useEffect, useState } from "react";
+import { toast } from "sonner";
+import useSWR from "swr";
 import { useDebounceCallback } from "usehooks-ts";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-
 
 const ChapterItem = ({ chapter }: { chapter: Chapter }) => {
   const { data: auth } = useAuthentication();
@@ -86,13 +81,16 @@ const ChapterItem = ({ chapter }: { chapter: Chapter }) => {
               )}
             {!auth?.isLoggedIn && chapter.price > 0 && (
               <span className="bg-orange-600 shrink-0 self-start text-white text-[10px] font-bold  px-2 py-1 rounded uppercase">
-                {chapter.price} <FontAwesomeIcon color={"yellow"} icon={faCoins} />{" "}
+                {chapter.price}{" "}
+                <FontAwesomeIcon color={"yellow"} icon={faCoins} />{" "}
               </span>
             )}
           </div>
-          {chapter.chapter_title && <span className='text-muted-foreground/70 text-xxs line-clamp-1 '>
-            {chapter.chapter_title}
-          </span>}
+          {chapter.chapter_title && (
+            <span className="text-muted-foreground/70 text-xxs line-clamp-1 ">
+              {chapter.chapter_title}
+            </span>
+          )}
           {!chapter.views && (
             <span className="text-muted-foreground/50  text-[10px] block">
               {get_time_diff(chapter.created_at)}
@@ -105,7 +103,6 @@ const ChapterItem = ({ chapter }: { chapter: Chapter }) => {
             </span>
           )}
         </div>
-
       </div>
     </li>
   );
@@ -141,7 +138,10 @@ const ChaptersList = ({
     fetcher
   );
 
-  const { data: premium, isLoading: isLoadingPremium } = useSWR<{ data: Chapter[]; meta: any }>(
+  const { data: premium, isLoading: isLoadingPremium } = useSWR<{
+    data: Chapter[];
+    meta: any;
+  }>(
     `/api/chapters/paid?${new URLSearchParams({
       query,
       order,
@@ -159,41 +159,50 @@ const ChaptersList = ({
   const chapters = data?.data;
   const premiumChapters = premium?.data;
 
-
-  const debounced = useDebounceCallback(setQuery, 1000)
-
-
+  const debounced = useDebounceCallback(setQuery, 1000);
 
   return (
     <>
-
-      <div className="flex flex-row gap-2">
-        <Input className='placeholder:text-xxs' placeholder='Filter by chapter name, chapter title...' onChange={e => debounced(e.currentTarget.value)} />
-        <ToggleGroup
-          type="single"
-          onValueChange={(value) => setOrder(value)}
-          defaultValue={'desc'}
-        >
-          <ToggleGroupItem
-            variant={'outline'}
-            value="asc"
+      <div className="flex items-center gap-x-10">
+        <h2 className="text-2xl">Chapters list</h2>
+        <div className="w-[40%] relative">
+          <Search className="w-4 h-4 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-100" />
+          <Input
+            className="placeholder:text-xxs rounded-none placeholder:pl-3"
+            placeholder="Search chapter by number,chapter name, chapter title...."
+            onChange={(e) => debounced(e.currentTarget.value)}
+          />
+        </div>
+        <div>
+          <ToggleGroup
+            type="single"
+            onValueChange={(value) => setOrder(value)}
+            defaultValue={"desc"}
+            className="space-x-4"
           >
-            <ArrowUpIcon />
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            variant={'outline'}
-            value="desc"
-          >
-            <ArrowDownIcon />
-          </ToggleGroupItem>
-        </ToggleGroup>
+            <ToggleGroupItem
+              variant={"outline"}
+              value="asc"
+              className="rounded-none"
+            >
+              <ArrowUpIcon />
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              variant={"outline"}
+              value="desc"
+              className="rounded-none"
+            >
+              <ArrowDownIcon />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </div>
       {!isLoading ? (
         <div className="space-y-4 py-5" ref={containerRef}>
-
           <>
-            <ul className="grid grid-cols-1 gap-3">
-              {chapters && premiumChapters &&
+            <ul className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {chapters &&
+                premiumChapters &&
                 [...premiumChapters, ...chapters].map((chapter) => {
                   return (
                     <ChapterWrapper chapter={chapter} key={chapter.id}>
@@ -334,10 +343,17 @@ const ChapterWrapper = ({
     });
   }
 
-  if (auth && auth.isLoggedIn && !isLoading && (auth!.user.is_staff_reader || auth!.user.role === 'Admin' || auth!.user.role === 'Editor')) {
+  if (
+    auth &&
+    auth.isLoggedIn &&
+    !isLoading &&
+    (auth!.user.is_staff_reader ||
+      auth!.user.role === "Admin" ||
+      auth!.user.role === "Editor")
+  ) {
     return (
-      <Link prefetch={false}
-
+      <Link
+        prefetch={false}
         href={`/series/${chapter.series.series_slug}/${chapter.chapter_slug}`}
         className="text-foreground visited:text-[rgb(79,0,225)]"
       >
@@ -376,8 +392,8 @@ const ChapterWrapper = ({
     );
   } else {
     return (
-      <Link prefetch={false}
-
+      <Link
+        prefetch={false}
         href={`/series/${chapter.series.series_slug}/${chapter.chapter_slug}`}
         className="text-foreground visited:text-[rgb(79,0,225)]"
       >

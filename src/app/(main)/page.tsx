@@ -1,11 +1,11 @@
-import { Metadata } from "next";
-import { Chapter, Series } from "@/types";
-import { Website_API, Website_Local_API } from "@global";
+import { HeroItem } from "@/components/Slider";
 import Template1 from "@/components/templates/template_1";
 import Template2 from "@/components/templates/template_2";
 import { env } from "@/env";
-import { HeroItem } from "@/components/Slider";
 import type { PaginatedResults } from "@/lib/utils";
+import { Series } from "@/types";
+import { Website_Local_API } from "@global";
+import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: env.HOME_SEO_TITLE,
